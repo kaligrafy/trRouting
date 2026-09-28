@@ -11,7 +11,6 @@ csa_test_SOURCES = gtest.cpp \
     ../../src/scenario_paths.cpp \
     ../../src/static_transit_network.cpp \
     ../../src/osm_network_writer.cpp \
-    ../benchmark_csa/random_nodes.cpp \
     csa_test_base.cpp \
     csa_test_data_fetcher.cpp \
     connection_cache_test.cpp \

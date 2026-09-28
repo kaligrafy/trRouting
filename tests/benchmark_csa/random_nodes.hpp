@@ -1,10 +1,11 @@
 #ifndef TR_RANDOM_NODES
 #define TR_RANDOM_NODES
 
-#include <map>
+#include <algorithm>
+#include <iterator>
+#include <random>
 #include <vector>
 #include <functional>
-#include <boost/uuid/uuid.hpp>
 
 namespace TrRouting
 {
@@ -16,6 +17,8 @@ namespace TrRouting
    * standard library, but the sample may differ between implementations (for
    * example libc++ and libstdc++).
    *
+   * @tparam NodesMap A map whose values are nodes or references to nodes, for
+   * example TransitData::getNodes() or StaticTransitNetwork::getNodes()
    * @param nodes The nodes to sample from
    * @param count Maximum number of nodes to return. All nodes are returned if
    * there are fewer than count
@@ -23,7 +26,20 @@ namespace TrRouting
    * @return std::vector<std::reference_wrapper<const Node>> The sampled nodes,
    * in the same relative order as in nodes
    */
-  std::vector<std::reference_wrapper<const Node>> sampleRandomNodes(const std::map<boost::uuids::uuid, Node> &nodes, size_t count, unsigned int seed);
+  template <typename NodesMap>
+  std::vector<std::reference_wrapper<const Node>> sampleRandomNodes(const NodesMap &nodes, size_t count, unsigned int seed)
+  {
+    std::vector<std::reference_wrapper<const Node>> allNodes;
+    allNodes.reserve(nodes.size());
+    for (const auto &keyAndNode : nodes)
+    {
+      allNodes.push_back(keyAndNode.second);
+    }
+
+    std::vector<std::reference_wrapper<const Node>> sampledNodes;
+    std::sample(allNodes.begin(), allNodes.end(), std::back_inserter(sampledNodes), count, std::mt19937(seed));
+    return sampledNodes;
+  }
 
 }
 
