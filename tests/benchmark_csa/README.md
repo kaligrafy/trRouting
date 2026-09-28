@@ -18,3 +18,14 @@ TR_BENCHMARK_SCENARIO_ID=<scenario uuid> \
 TR_BENCHMARK_OSM_OUTPUT=/path/to/network.osm \
 ./gtest --gtest_filter='OsmNetworkBenchmarkTest.*'
 ```
+
+## Finding the journeys with the minimum number of transfers
+
+The `MinTransfersJourneysBenchmarkTest` finds all the journeys (distinct sequences of paths) with the minimum number of transfers between random pairs of stops served by a scenario, without any time information. It prints one CSV line per pair, then a summary by minimum number of transfers. It is skipped unless the cache and scenario environment variables are set:
+
+```
+TR_BENCHMARK_CACHE_PATH=/path/to/cache/directory \
+TR_BENCHMARK_SCENARIO_ID=<scenario uuid> \
+TR_BENCHMARK_PAIRS_COUNT=100 \
+./gtest --gtest_filter='MinTransfersJourneysBenchmarkTest.*'
+```
