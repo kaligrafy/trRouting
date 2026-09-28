@@ -19,7 +19,8 @@ trips_and_connections_cache_fetcher.cpp \
 connection_set.cpp \
 connection_cache.cpp \
 transit_data.cpp \
-scenario_paths.cpp
+scenario_paths.cpp \
+osm_network_writer.cpp
 
 # Conditionally add memcached-related files if libmemcached is available
 if HAVE_MEMCACHED
