@@ -11,6 +11,7 @@
 #include "path.hpp"
 #include "scenario_paths.hpp"
 #include "osm_network_writer.hpp"
+#include "static_transit_network.hpp"
 
 /**
  * Generate the static OSM network of the paths usable in a scenario and time
@@ -38,7 +39,7 @@ TEST(OsmNetworkBenchmarkTest, GenerateScenarioOsmNetwork)
   auto paths = TrRouting::getScenarioPaths(transitData, scenario);
   std::ofstream output(outputPath);
   ASSERT_TRUE(output.is_open()) << "Cannot open " << outputPath;
-  TrRouting::writeOsmNetwork(output, paths);
+  TrRouting::writeOsmNetwork(output, TrRouting::StaticTransitNetwork(paths));
   output.close();
   ASSERT_FALSE(output.fail()) << "Cannot write " << outputPath;
   auto durationMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();

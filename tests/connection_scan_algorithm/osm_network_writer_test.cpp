@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 #include "csa_test_base.hpp"
 #include "osm_network_writer.hpp"
+#include "static_transit_network.hpp"
 #include "scenario_paths.hpp"
 
 // Count the non-overlapping occurrences of a pattern in a text
@@ -33,7 +34,7 @@ TEST_P(OsmNetworkWriterTest, NodesAndWaysOfScenario)
   auto paths = TrRouting::getScenarioPaths(transitData, transitData.getScenarios().at(scenarioUuid));
 
   std::ostringstream output;
-  TrRouting::writeOsmNetwork(output, paths);
+  TrRouting::writeOsmNetwork(output, TrRouting::StaticTransitNetwork(paths));
   std::string osm = output.str();
 
   const size_t expectedWaysCount = expectedPathsCount + expectedTransfersCount;
@@ -80,7 +81,7 @@ TEST(OsmNetworkWriterFormatTest, EscapesValuesSkipsEmptyTagsAndRestoresStream)
   TrRouting::Path path(uuidGenerator(), line, "outbound", {node1, node2}, {}, {60, -1}, {500, -1});
 
   std::ostringstream output;
-  TrRouting::writeOsmNetwork(output, {path});
+  TrRouting::writeOsmNetwork(output, TrRouting::StaticTransitNetwork({path}));
   std::string osm = output.str();
 
   EXPECT_NE(std::string::npos, osm.find("<tag k=\"name\" v=\"Rue &lt;A&gt; &amp; &quot;B&quot;\"/>"));
@@ -113,7 +114,7 @@ TEST(OsmNetworkWriterFormatTest, TransferInOneDirectionIsWrittenInBoth)
   TrRouting::Path path(uuidGenerator(), line, "outbound", {node1, node2}, {}, {60, -1}, {500, -1});
 
   std::ostringstream output;
-  TrRouting::writeOsmNetwork(output, {path});
+  TrRouting::writeOsmNetwork(output, TrRouting::StaticTransitNetwork({path}));
   std::string osm = output.str();
 
   EXPECT_EQ(2u, countOccurrences(osm, "<tag k=\"highway\" v=\"footway\"/>"));

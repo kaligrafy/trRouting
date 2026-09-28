@@ -1,11 +1,10 @@
 #include <iomanip>
-#include <map>
-#include <set>
 #include <string>
 #include <boost/io/ios_state.hpp>
 #include <boost/uuid/uuid_io.hpp>
 
 #include "osm_network_writer.hpp"
+#include "static_transit_network.hpp"
 #include "path.hpp"
 #include "line.hpp"
 #include "mode.hpp"
@@ -44,27 +43,18 @@ namespace TrRouting
     }
   }
 
-  void writeOsmNetwork(std::ostream &output, const std::vector<std::reference_wrapper<const Path>> &paths)
+  void writeOsmNetwork(std::ostream &output, const StaticTransitNetwork &network)
   {
     // Restore the caller's stream formatting when leaving
     boost::io::ios_all_saver streamStateSaver(output);
-
-    // Stops used by the paths, sorted by OSM id, since OSM tools expect sorted nodes
-    std::map<Node::uid_t, std::reference_wrapper<const Node>> nodesByUid;
-    for (const Path &path : paths)
-    {
-      for (const Node &node : path.nodesRef)
-      {
-        nodesByUid.emplace(node.uid, node);
-      }
-    }
 
     output << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
     // upload="never" prevents editors like JOSM from uploading this generated network to OpenStreetMap
     output << "<osm version=\"0.6\" generator=\"trRouting\" upload=\"never\">\n";
     // 7 decimals is the OSM coordinates precision
     output << std::fixed << std::setprecision(7);
-    for (const auto &uidAndNode : nodesByUid)
+    // The network nodes are sorted by uid, as OSM tools expect sorted nodes
+    for (const auto &uidAndNode : network.getNodes())
     {
       const Node &node = uidAndNode.second;
       // Editors like JOSM require a version for objects with positive ids
@@ -76,7 +66,7 @@ namespace TrRouting
     }
 
     int wayId = 0;
-    for (const Path &path : paths)
+    for (const Path &path : network.getPaths())
     {
       output << "  <way id=\"" << ++wayId << "\" version=\"1\">\n";
       for (const Node &node : path.nodesRef)
@@ -94,29 +84,17 @@ namespace TrRouting
       output << "  </way>\n";
     }
 
-    // Walking transfers between exported stops, as (from uid, to uid), to write each direction once, in order.
-    // A transfer listed in only one direction is also added in the reverse direction.
-    std::set<std::pair<Node::uid_t, Node::uid_t>> transfers;
-    for (const auto &uidAndNode : nodesByUid)
+    for (const auto &[fromUid, toUids] : network.getTransfers())
     {
-      for (const NodeTimeDistance &transfer : uidAndNode.second.get().transferableNodes)
+      for (const Node::uid_t toUid : toUids)
       {
-        const Node::uid_t toUid = transfer.node.uid;
-        if (toUid != uidAndNode.first && nodesByUid.count(toUid) > 0)
-        {
-          transfers.emplace(uidAndNode.first, toUid);
-          transfers.emplace(toUid, uidAndNode.first);
-        }
+        output << "  <way id=\"" << ++wayId << "\" version=\"1\">\n";
+        output << "    <nd ref=\"" << fromUid << "\"/>\n";
+        output << "    <nd ref=\"" << toUid << "\"/>\n";
+        writeTag(output, "highway", "footway");
+        writeTag(output, "oneway", "yes");
+        output << "  </way>\n";
       }
-    }
-    for (const auto &[fromUid, toUid] : transfers)
-    {
-      output << "  <way id=\"" << ++wayId << "\" version=\"1\">\n";
-      output << "    <nd ref=\"" << fromUid << "\"/>\n";
-      output << "    <nd ref=\"" << toUid << "\"/>\n";
-      writeTag(output, "highway", "footway");
-      writeTag(output, "oneway", "yes");
-      output << "  </way>\n";
     }
     output << "</osm>\n";
   }

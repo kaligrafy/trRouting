@@ -17,6 +17,7 @@ gtest_SOURCES = gtest.cpp \
     ../../src/connection_cache.cpp \
     ../../src/transit_data.cpp \
     ../../src/scenario_paths.cpp \
+    ../../src/static_transit_network.cpp \
     ../../src/osm_network_writer.cpp \
     ../../src/geofilter.cpp \
     ../../src/euclideangeofilter.cpp

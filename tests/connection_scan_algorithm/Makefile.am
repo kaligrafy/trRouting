@@ -9,6 +9,7 @@ csa_test_SOURCES = gtest.cpp \
     ../../src/connection_cache.cpp \
     ../../src/transit_data.cpp \
     ../../src/scenario_paths.cpp \
+    ../../src/static_transit_network.cpp \
     ../../src/osm_network_writer.cpp \
     ../benchmark_csa/random_nodes.cpp \
     csa_test_base.cpp \
@@ -28,7 +29,8 @@ csa_test_SOURCES = gtest.cpp \
     line_combinations_test.cpp \
     random_nodes_test.cpp \
     scenario_paths_test.cpp \
-    osm_network_writer_test.cpp
+    osm_network_writer_test.cpp \
+    static_transit_network_test.cpp
 
 csa_test_LDADD = $(top_srcdir)/tests/libgtest.la ../../connection_scan_algorithm/src/libcsa.la
 
