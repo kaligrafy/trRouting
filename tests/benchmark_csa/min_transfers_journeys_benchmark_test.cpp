@@ -1,20 +1,11 @@
 #include <algorithm>
 #include <chrono>
-#include <cstdlib>
 #include <fstream>
-#include <iostream>
 #include <map>
-#include <memory>
 #include <random>
-#include <boost/uuid/string_generator.hpp>
 
-#include "gtest/gtest.h"
-#include "cache_fetcher.hpp"
-#include "transit_data.hpp"
-#include "scenario.hpp"
+#include "scenario_network_benchmark.hpp"
 #include "path.hpp"
-#include "scenario_paths.hpp"
-#include "static_transit_network.hpp"
 #include "min_transfers_journeys.hpp"
 #include "journey_legs.hpp"
 #include "journeys_geojson.hpp"
@@ -25,44 +16,11 @@
 
 /**
  * Benchmarks of the journeys search with the minimum number of transfers, on
- * the static network of a scenario. Skipped unless these environment
- * variables are set:
- * - TR_BENCHMARK_CACHE_PATH: directory of the cache data (*.capnpbin files)
- * - TR_BENCHMARK_SCENARIO_ID: uuid of the scenario
+ * the static network of a scenario.
  */
-class MinTransfersJourneysBenchmarkTest : public ::testing::Test
+class MinTransfersJourneysBenchmarkTest : public ScenarioNetworkBenchmarkTest
 {
 protected:
-  inline static std::unique_ptr<TrRouting::CacheFetcher> cacheFetcher;
-  inline static std::unique_ptr<TrRouting::TransitData> transitData;
-  inline static std::unique_ptr<TrRouting::StaticTransitNetwork> network;
-  inline static std::string scenarioName;
-
-  // Load the scenario's network once for all the tests
-  static void SetUpTestSuite()
-  {
-    const char *cachePath = std::getenv("TR_BENCHMARK_CACHE_PATH");
-    const char *scenarioId = std::getenv("TR_BENCHMARK_SCENARIO_ID");
-    if (cachePath == nullptr || scenarioId == nullptr)
-    {
-      return;
-    }
-    cacheFetcher = std::make_unique<TrRouting::CacheFetcher>(cachePath);
-    transitData = std::make_unique<TrRouting::TransitData>(*cacheFetcher);
-    ASSERT_EQ(TrRouting::DataStatus::READY, transitData->getDataStatus());
-    const TrRouting::Scenario &scenario = transitData->getScenarios().at(boost::uuids::string_generator()(scenarioId));
-    network = std::make_unique<TrRouting::StaticTransitNetwork>(TrRouting::getScenarioPaths(*transitData, scenario));
-    scenarioName = scenario.name;
-    std::cout << "Network of " << network->getPaths().size() << " paths and " << network->getNodes().size() << " stops for scenario " << scenarioName << std::endl;
-  }
-
-  static void TearDownTestSuite()
-  {
-    network.reset();
-    transitData.reset();
-    cacheFetcher.reset();
-  }
-
   // An end of the journeys: its place and the stops where the journeys can start or end
   struct JourneysEnd
   {
@@ -100,14 +58,6 @@ protected:
       stops.push_back(footpath.node);
     }
     return {place, stops};
-  }
-
-  void SetUp() override
-  {
-    if (network == nullptr)
-    {
-      GTEST_SKIP() << "Set TR_BENCHMARK_CACHE_PATH and TR_BENCHMARK_SCENARIO_ID to find the journeys";
-    }
   }
 };
 
