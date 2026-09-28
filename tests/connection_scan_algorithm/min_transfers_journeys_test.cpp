@@ -30,7 +30,7 @@ TEST_P(MinTransfersJourneysTest, JourneysOfScenario)
   auto [scenarioUuid, originUuid, destinationUuid, expectedJourneys] = GetParam();
   TrRouting::StaticTransitNetwork network(TrRouting::getScenarioPaths(transitData, transitData.getScenarios().at(scenarioUuid)));
 
-  auto journeys = TrRouting::getMinTransfersJourneys(network, transitData.getNodes().at(originUuid), transitData.getNodes().at(destinationUuid));
+  auto journeys = TrRouting::getMinTransfersJourneys(network, {transitData.getNodes().at(originUuid)}, {transitData.getNodes().at(destinationUuid)});
 
   EXPECT_EQ(expectedJourneys, toPathUuids(journeys));
 }
@@ -97,10 +97,10 @@ TEST_F(MinTransfersJourneysNetworkTest, AllJourneysWithTheMinimumTransfers)
   const TrRouting::Path &pathDE = addPath({3, 4});
   TrRouting::StaticTransitNetwork network({directAE, directAE2, pathAD, pathDE});
 
-  auto journeys = TrRouting::getMinTransfersJourneys(network, *nodes[0], *nodes[4]);
+  auto journeys = TrRouting::getMinTransfersJourneys(network, {*nodes[0]}, {*nodes[4]});
 
   EXPECT_EQ(PathUuidsJourneys({{directAE.uuid}, {directAE2.uuid}}), toPathUuids(journeys));
-  EXPECT_EQ(PathUuidsJourneys({{directAE.uuid}}), toPathUuids(TrRouting::getMinTransfersJourneys(network, *nodes[0], *nodes[4], 1)));
+  EXPECT_EQ(PathUuidsJourneys({{directAE.uuid}}), toPathUuids(TrRouting::getMinTransfersJourneys(network, {*nodes[0]}, {*nodes[4]}, 1)));
 }
 
 TEST_F(MinTransfersJourneysNetworkTest, TransfersAtSameStopAndByWalkingAreDistinctSequences)
@@ -112,9 +112,21 @@ TEST_F(MinTransfersJourneysNetworkTest, TransfersAtSameStopAndByWalkingAreDistin
   const TrRouting::Path &pathCE = addPath({2, 4});
   TrRouting::StaticTransitNetwork network({pathAB, pathBE, pathCE});
 
-  auto journeys = TrRouting::getMinTransfersJourneys(network, *nodes[0], *nodes[4]);
+  auto journeys = TrRouting::getMinTransfersJourneys(network, {*nodes[0]}, {*nodes[4]});
 
   EXPECT_EQ(PathUuidsJourneys({{pathAB.uuid, pathBE.uuid}, {pathAB.uuid, pathCE.uuid}}), toPathUuids(journeys));
+}
+
+TEST_F(MinTransfersJourneysNetworkTest, SeveralOriginsAndDestinations)
+{
+  // From A or B to D or E: B-D is direct, while A-C then C-E needs a transfer
+  const TrRouting::Path &pathAC = addPath({0, 2});
+  const TrRouting::Path &pathCE = addPath({2, 4});
+  const TrRouting::Path &pathBD = addPath({1, 3});
+  TrRouting::StaticTransitNetwork network({pathAC, pathCE, pathBD});
+
+  EXPECT_EQ(PathUuidsJourneys({{pathBD.uuid}}), toPathUuids(TrRouting::getMinTransfersJourneys(network, {*nodes[0], *nodes[1]}, {*nodes[3], *nodes[4]})));
+  EXPECT_EQ(PathUuidsJourneys({{pathAC.uuid, pathCE.uuid}}), toPathUuids(TrRouting::getMinTransfersJourneys(network, {*nodes[0]}, {*nodes[3], *nodes[4]})));
 }
 
 TEST_F(MinTransfersJourneysNetworkTest, NoWalkingAtOriginAndDestination)
@@ -127,5 +139,5 @@ TEST_F(MinTransfersJourneysNetworkTest, NoWalkingAtOriginAndDestination)
   const TrRouting::Path &pathEC = addPath({4, 2});
   TrRouting::StaticTransitNetwork network({pathBA, pathBD, pathEC});
 
-  EXPECT_TRUE(TrRouting::getMinTransfersJourneys(network, *nodes[0], *nodes[4]).empty());
+  EXPECT_TRUE(TrRouting::getMinTransfersJourneys(network, {*nodes[0]}, {*nodes[4]}).empty());
 }

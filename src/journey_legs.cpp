@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <map>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "journey_legs.hpp"
 #include "static_transit_network.hpp"
@@ -31,19 +32,27 @@ namespace TrRouting
     }
   }
 
-  std::vector<JourneyLeg> getFewestSegmentsLegs(const StaticTransitNetwork &network, const std::vector<std::reference_wrapper<const Path>> &journey, const Node &origin, const Node &destination)
+  std::vector<JourneyLeg> getFewestSegmentsLegs(const StaticTransitNetwork &network, const std::vector<std::reference_wrapper<const Path>> &journey, const std::vector<std::reference_wrapper<const Node>> &origins, const std::vector<std::reference_wrapper<const Node>> &destinations)
   {
     if (journey.empty())
     {
       return {};
     }
+    std::unordered_set<Node::uid_t> destinationUids;
+    for (const Node &destination : destinations)
+    {
+      destinationUids.insert(destination.uid);
+    }
 
     // Boardings of each leg, by boarding index in the leg's path
     std::vector<std::map<size_t, Boarding>> legsBoardings(journey.size());
     auto firstBoardingIndexes = getBoardingIndexes(journey.front());
-    for (const size_t index : firstBoardingIndexes[origin.uid])
+    for (const Node &origin : origins)
     {
-      legsBoardings.front().emplace(index, Boarding{0, 0, 0});
+      for (const size_t index : firstBoardingIndexes[origin.uid])
+      {
+        legsBoardings.front().emplace(index, Boarding{0, 0, 0});
+      }
     }
     for (size_t leg = 0; leg + 1 < journey.size(); leg++)
     {
@@ -69,7 +78,7 @@ namespace TrRouting
       }
     }
 
-    // The last leg is left at the first destination stop after its boarding
+    // The last leg is left at the first destination after its boarding
     const Path &lastPath = journey.back();
     std::vector<JourneyLeg> legs;
     size_t fewestSegments = 0;
@@ -77,7 +86,7 @@ namespace TrRouting
     {
       for (size_t alightingIndex = boardingIndex + 1; alightingIndex < lastPath.nodesRef.size(); alightingIndex++)
       {
-        if (lastPath.nodesRef[alightingIndex].get().uid == destination.uid)
+        if (destinationUids.count(lastPath.nodesRef[alightingIndex].get().uid) > 0)
         {
           const size_t segments = boarding.segments + alightingIndex - boardingIndex;
           if (legs.empty() || segments < fewestSegments)

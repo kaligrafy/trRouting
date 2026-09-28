@@ -94,7 +94,7 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
     const TrRouting::Node &origin = origins[i];
     const TrRouting::Node &destination = destinations[i];
     auto startTime = std::chrono::steady_clock::now();
-    auto journeys = TrRouting::getMinTransfersJourneys(*network, origin, destination);
+    auto journeys = TrRouting::getMinTransfersJourneys(*network, {origin}, {destination});
     const double durationMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - startTime).count();
 
     const int minTransfers = journeys.empty() ? -1 : journeys.front().size() - 1;
@@ -137,9 +137,9 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJsonBetweenTwoStops)
 
   auto startTime = std::chrono::steady_clock::now();
   std::vector<std::vector<TrRouting::JourneyLeg>> journeysLegs;
-  for (const auto &journey : TrRouting::getMinTransfersJourneys(*network, origin, destination, maxJourneys))
+  for (const auto &journey : TrRouting::getMinTransfersJourneys(*network, {origin}, {destination}, maxJourneys))
   {
-    journeysLegs.push_back(TrRouting::getFewestSegmentsLegs(*network, journey, origin, destination));
+    journeysLegs.push_back(TrRouting::getFewestSegmentsLegs(*network, journey, {origin}, {destination}));
   }
   const double durationMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - startTime).count();
 

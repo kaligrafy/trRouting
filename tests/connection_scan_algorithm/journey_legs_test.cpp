@@ -21,7 +21,7 @@ TEST_P(JourneyLegsTest, FewestSegmentsLegs)
   }
 
   Legs legs;
-  for (const TrRouting::JourneyLeg &leg : TrRouting::getFewestSegmentsLegs(network, journey, transitData.getNodes().at(originUuid), transitData.getNodes().at(destinationUuid)))
+  for (const TrRouting::JourneyLeg &leg : TrRouting::getFewestSegmentsLegs(network, journey, {transitData.getNodes().at(originUuid)}, {transitData.getNodes().at(destinationUuid)}))
   {
     legs.emplace_back(leg.path.get().uuid, leg.boardingIndex, leg.alightingIndex);
   }
@@ -45,3 +45,17 @@ INSTANTIATE_TEST_SUITE_P(
     std::make_tuple(TestDataFetcher::nodeSouth2Uuid, TestDataFetcher::nodeNorth2Uuid, std::vector<boost::uuids::uuid>(), Legs())
   )
 );
+
+TEST_F(BaseCsaFixtureTests, FewestSegmentsLegsFromSeveralOriginsAndDestinations)
+{
+  TrRouting::StaticTransitNetwork network(TrRouting::getScenarioPaths(transitData, transitData.getScenarios().at(TestDataFetcher::scenarioUuid)));
+  const TrRouting::Path &pathSN = transitData.getPaths().at(TestDataFetcher::pathSNUuid);
+  const auto node = [this](const boost::uuids::uuid &uuid) -> const TrRouting::Node & { return transitData.getNodes().at(uuid); };
+
+  // South1 to North1 travels 2 segments, the fewest from South2 or South1 to North1 or North2
+  auto legs = TrRouting::getFewestSegmentsLegs(network, {pathSN}, {node(TestDataFetcher::nodeSouth2Uuid), node(TestDataFetcher::nodeSouth1Uuid)}, {node(TestDataFetcher::nodeNorth1Uuid), node(TestDataFetcher::nodeNorth2Uuid)});
+
+  ASSERT_EQ(1u, legs.size());
+  EXPECT_EQ(1u, legs[0].boardingIndex);
+  EXPECT_EQ(3u, legs[0].alightingIndex);
+}
