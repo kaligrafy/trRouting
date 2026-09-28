@@ -4,6 +4,7 @@ gtest_SOURCES = gtest.cpp \
     benchmark_CSA_test.cpp \
     osm_network_benchmark_test.cpp \
     min_transfers_journeys_benchmark_test.cpp \
+    bounded_alternatives_benchmark_test.cpp \
     ../../src/cache_fetcher.cpp \
     ../../src/agencies_cache_fetcher.cpp \
     ../../src/nodes_cache_fetcher.cpp \

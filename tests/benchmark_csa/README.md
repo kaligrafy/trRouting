@@ -40,3 +40,16 @@ TR_BENCHMARK_DESTINATION_ID=<destination stop uuid> \
 TR_BENCHMARK_GEOJSON_OUTPUT=/path/to/journeys.geojson \
 ./gtest --gtest_filter='MinTransfersJourneysBenchmarkTest.JourneysGeoJson'
 ```
+
+## Comparing the bounded alternatives with the current alternatives
+
+The `BoundedAlternativesBenchmarkTest` compares `Calculator::boundedAlternatives` with `Calculator::alternativesRouting` between random pairs of stops served by a scenario, at 8:00. It prints one CSV line per pair with a result, then the mean times, the number of current alternatives found by `boundedAlternatives` with the reasons why the others are not, and how the journeys of the sequences of paths found by both compare. The number of pairs, the extra transfers and the maximum number of journeys of `boundedAlternatives` are optional (100, 2 and 10000 by default):
+
+```
+TR_BENCHMARK_CACHE_PATH=/path/to/cache/directory \
+TR_BENCHMARK_SCENARIO_ID=<scenario uuid> \
+TR_BENCHMARK_PAIRS_COUNT=100 \
+TR_BENCHMARK_EXTRA_TRANSFERS=2 \
+TR_BENCHMARK_MAX_JOURNEYS=10000 \
+./gtest --gtest_filter='BoundedAlternativesBenchmarkTest.*'
+```
