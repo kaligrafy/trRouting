@@ -11,6 +11,7 @@ csa_test_SOURCES = gtest.cpp \
     ../../src/scenario_paths.cpp \
     ../../src/static_transit_network.cpp \
     ../../src/min_transfers_journeys.cpp \
+    ../../src/journey_legs.cpp \
     ../../src/osm_network_writer.cpp \
     csa_test_base.cpp \
     csa_test_data_fetcher.cpp \
@@ -31,7 +32,8 @@ csa_test_SOURCES = gtest.cpp \
     scenario_paths_test.cpp \
     osm_network_writer_test.cpp \
     static_transit_network_test.cpp \
-    min_transfers_journeys_test.cpp
+    min_transfers_journeys_test.cpp \
+    journey_legs_test.cpp
 
 csa_test_LDADD = $(top_srcdir)/tests/libgtest.la ../../connection_scan_algorithm/src/libcsa.la
 
