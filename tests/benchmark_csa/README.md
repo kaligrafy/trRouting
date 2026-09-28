@@ -10,7 +10,7 @@ To run, either run `make check` after having configured the repository with `./c
 
 ## Generating the static OSM network of a scenario
 
-The `OsmNetworkBenchmarkTest` writes the paths usable in a scenario as an OSM file (one way per path, through its stops) and times the generation. It is skipped unless these environment variables are set:
+The `OsmNetworkBenchmarkTest` writes the paths usable in a scenario as an OSM file (one oneway way per path, through its stops, and one oneway footway per direction of each walking transfer between stops) and times the generation. It is skipped unless these environment variables are set:
 
 ```
 TR_BENCHMARK_CACHE_PATH=/path/to/cache/directory \

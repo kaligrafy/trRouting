@@ -1,5 +1,6 @@
 #include <iomanip>
 #include <map>
+#include <set>
 #include <string>
 #include <boost/io/ios_state.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -90,6 +91,31 @@ namespace TrRouting
       writeTag(output, "oneway", "yes");
       writeTag(output, "trRouting:path_uuid", boost::uuids::to_string(path.uuid));
       writeTag(output, "trRouting:line_uuid", boost::uuids::to_string(path.line.uuid));
+      output << "  </way>\n";
+    }
+
+    // Walking transfers between exported stops, as (from uid, to uid), to write each direction once, in order.
+    // A transfer listed in only one direction is also added in the reverse direction.
+    std::set<std::pair<Node::uid_t, Node::uid_t>> transfers;
+    for (const auto &uidAndNode : nodesByUid)
+    {
+      for (const NodeTimeDistance &transfer : uidAndNode.second.get().transferableNodes)
+      {
+        const Node::uid_t toUid = transfer.node.uid;
+        if (toUid != uidAndNode.first && nodesByUid.count(toUid) > 0)
+        {
+          transfers.emplace(uidAndNode.first, toUid);
+          transfers.emplace(toUid, uidAndNode.first);
+        }
+      }
+    }
+    for (const auto &[fromUid, toUid] : transfers)
+    {
+      output << "  <way id=\"" << ++wayId << "\" version=\"1\">\n";
+      output << "    <nd ref=\"" << fromUid << "\"/>\n";
+      output << "    <nd ref=\"" << toUid << "\"/>\n";
+      writeTag(output, "highway", "footway");
+      writeTag(output, "oneway", "yes");
       output << "  </way>\n";
     }
     output << "</osm>\n";
