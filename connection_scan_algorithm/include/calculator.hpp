@@ -89,6 +89,8 @@ namespace TrRouting
     void initializeCalculationData();
     bool resetAccessFootpaths(const CommonParameters &parameters, const Point& origin);
     bool resetEgressFootpaths(const CommonParameters &parameters, const Point& destination);
+    // Build the result of a journey from its steps: the access, the in-vehicle steps with the transfer after each of them, then the egress
+    std::unique_ptr<SingleCalculationResult> getJourneyResult(const RouteParameters &parameters, const std::deque<JourneyStep> &journey, int bestDepartureTime);
     // Convert the optimization case ID returned by optimizeJourney to a string
     std::string optimizeCasesToString(const std::vector<int> optimizeCases);
     std::unique_ptr<SingleCalculationResult> calculateSingleReverse(const RouteParameters &parameters);

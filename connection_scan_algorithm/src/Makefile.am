@@ -8,6 +8,7 @@ libcsa_la_SOURCES = alternative_filter.cpp \
 		   forward_calculation.cpp \
 		   forward_journey.cpp \
 		   initializations.cpp \
+		   journey_result.cpp \
 		   optimize_journey.cpp \
 		   parameters/common_parameters.cpp \
 		   parameters/route_parameters.cpp \
