@@ -63,19 +63,27 @@ protected:
     cacheFetcher.reset();
   }
 
+  // An end of the journeys: its place and the stops where the journeys can start or end
+  struct JourneysEnd
+  {
+    TrRouting::Point place;
+    std::vector<std::reference_wrapper<const TrRouting::Node>> stops;
+  };
+
   /**
-   * Stops of an end of the journeys, given by the TR_BENCHMARK_<end>_ID
-   * environment variable as a stop uuid, or by TR_BENCHMARK_<end>_LAT_LON as
+   * End of the journeys given by the TR_BENCHMARK_<end>_ID environment
+   * variable as a stop uuid, or by TR_BENCHMARK_<end>_LAT_LON as
    * "latitude,longitude" for the stops within walking distance of this place.
-   * Empty if none is set.
+   * Without stops if none is set.
    */
-  static std::vector<std::reference_wrapper<const TrRouting::Node>> getEndStops(const std::string &end)
+  static JourneysEnd getJourneysEnd(const std::string &end)
   {
     const char *id = std::getenv(("TR_BENCHMARK_" + end + "_ID").c_str());
     const char *latLon = std::getenv(("TR_BENCHMARK_" + end + "_LAT_LON").c_str());
     if (id != nullptr)
     {
-      return {transitData->getNodes().at(boost::uuids::string_generator()(id))};
+      const TrRouting::Node &stop = transitData->getNodes().at(boost::uuids::string_generator()(id));
+      return {*stop.point, {stop}};
     }
     if (latLon == nullptr)
     {
@@ -91,7 +99,7 @@ protected:
     {
       stops.push_back(footpath.node);
     }
-    return stops;
+    return {place, stops};
   }
 
   void SetUp() override
@@ -159,8 +167,10 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
 TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJson)
 {
   const size_t maxJourneys = 100;
-  const auto origins = getEndStops("ORIGIN");
-  const auto destinations = getEndStops("DESTINATION");
+  const JourneysEnd origin = getJourneysEnd("ORIGIN");
+  const JourneysEnd destination = getJourneysEnd("DESTINATION");
+  const auto &origins = origin.stops;
+  const auto &destinations = destination.stops;
   const char *outputPath = std::getenv("TR_BENCHMARK_GEOJSON_OUTPUT");
   if (origins.empty() || destinations.empty() || outputPath == nullptr)
   {
@@ -177,7 +187,7 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJson)
 
   std::ofstream output(outputPath);
   ASSERT_TRUE(output.is_open()) << "Cannot open " << outputPath;
-  output << TrRouting::getJourneysGeoJson(journeysLegs).dump();
+  output << TrRouting::getJourneysGeoJson(journeysLegs, origin.place, destination.place).dump();
   output.close();
   ASSERT_FALSE(output.fail()) << "Cannot write " << outputPath;
 

@@ -9,16 +9,26 @@ namespace TrRouting
 
   namespace
   {
-    // GeoJSON position of a stop, as [longitude, latitude]
+    // GeoJSON position, as [longitude, latitude]
+    nlohmann::json getPosition(const Point &point)
+    {
+      return {point.longitude, point.latitude};
+    }
+
     nlohmann::json getPosition(const Node &node)
     {
-      return {node.point->longitude, node.point->latitude};
+      return getPosition(*node.point);
+    }
+
+    nlohmann::json getPointFeature(const Point &point, const std::string &name)
+    {
+      return {{"type", "Feature"}, {"geometry", {{"type", "Point"}, {"coordinates", getPosition(point)}}}, {"properties", {{"name", name}}}};
     }
   }
 
-  nlohmann::json getJourneysGeoJson(const std::vector<std::vector<JourneyLeg>> &journeys)
+  nlohmann::json getJourneysGeoJson(const std::vector<std::vector<JourneyLeg>> &journeys, const Point &origin, const Point &destination)
   {
-    nlohmann::json features = nlohmann::json::array();
+    nlohmann::json features = {getPointFeature(origin, "origin"), getPointFeature(destination, "destination")};
     for (const std::vector<JourneyLeg> &legs : journeys)
     {
       nlohmann::json lines = nlohmann::json::array();

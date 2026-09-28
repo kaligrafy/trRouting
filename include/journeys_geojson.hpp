@@ -9,17 +9,22 @@
 namespace TrRouting
 {
 
+  class Point;
+
   /**
-   * @brief Get journeys as a GeoJSON FeatureCollection, with one Feature per
-   * journey. The geometry is a MultiLineString with, in travel order, the
-   * stops traveled on each leg and the walking transfers between legs, if any.
-   * The properties are the number of transfers and the short names of the
-   * lines of the legs.
+   * @brief Get journeys as a GeoJSON FeatureCollection. The first two
+   * Features are the origin and destination Points, with "origin" and
+   * "destination" as name property. Then each journey is a Feature whose
+   * geometry is a MultiLineString with, in travel order, the stops traveled on
+   * each leg and the walking transfers between legs, if any. The properties
+   * are the number of transfers and the short names of the lines of the legs.
    *
    * @param journeys The journeys, as their legs, for example from getFewestSegmentsLegs
+   * @param origin The origin of the journeys, a place or a stop
+   * @param destination The destination of the journeys, a place or a stop
    * @return nlohmann::json The GeoJSON FeatureCollection
    */
-  nlohmann::json getJourneysGeoJson(const std::vector<std::vector<JourneyLeg>> &journeys);
+  nlohmann::json getJourneysGeoJson(const std::vector<std::vector<JourneyLeg>> &journeys, const Point &origin, const Point &destination);
 
 }
 

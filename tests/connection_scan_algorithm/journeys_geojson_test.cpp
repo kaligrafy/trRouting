@@ -10,6 +10,14 @@ protected:
     const TrRouting::Node &node = transitData.getNodes().at(nodeUuid);
     return {node.point->longitude, node.point->latitude};
   }
+
+  nlohmann::json pointFeature(const nlohmann::json &position, const std::string &name)
+  {
+    return {{"type", "Feature"}, {"geometry", {{"type", "Point"}, {"coordinates", position}}}, {"properties", {{"name", name}}}};
+  }
+
+  // Place near South2 as origin, and West2 as destination
+  const TrRouting::Point origin{45.527, -73.589};
 };
 
 TEST_F(JourneysGeoJsonTest, FeaturePerJourneyWithLegsAndWalkingTransfers)
@@ -25,6 +33,8 @@ TEST_F(JourneysGeoJsonTest, FeaturePerJourneyWithLegsAndWalkingTransfers)
   nlohmann::json expected = {
     {"type", "FeatureCollection"},
     {"features", {
+      pointFeature({-73.589, 45.527}, "origin"),
+      pointFeature(position(TestDataFetcher::nodeWest2Uuid), "destination"),
       {
         {"type", "Feature"},
         {"geometry", {{"type", "MultiLineString"}, {"coordinates", {
@@ -43,10 +53,12 @@ TEST_F(JourneysGeoJsonTest, FeaturePerJourneyWithLegsAndWalkingTransfers)
       }
     }}
   };
-  EXPECT_EQ(expected.dump(2), TrRouting::getJourneysGeoJson(journeys).dump(2));
+  EXPECT_EQ(expected.dump(2), TrRouting::getJourneysGeoJson(journeys, origin, *transitData.getNodes().at(TestDataFetcher::nodeWest2Uuid).point).dump(2));
 }
 
 TEST_F(JourneysGeoJsonTest, NoJourney)
 {
-  EXPECT_EQ(nlohmann::json({{"type", "FeatureCollection"}, {"features", nlohmann::json::array()}}), TrRouting::getJourneysGeoJson({}));
+  const TrRouting::Point destination{45.53, -73.62};
+  nlohmann::json expected = {{"type", "FeatureCollection"}, {"features", {pointFeature({-73.589, 45.527}, "origin"), pointFeature({-73.62, 45.53}, "destination")}}};
+  EXPECT_EQ(expected.dump(2), TrRouting::getJourneysGeoJson({}, origin, destination).dump(2));
 }
