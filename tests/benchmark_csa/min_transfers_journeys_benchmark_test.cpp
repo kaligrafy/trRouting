@@ -1,8 +1,10 @@
 #include <algorithm>
 #include <chrono>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <map>
+#include <memory>
 #include <random>
 #include <boost/uuid/string_generator.hpp>
 
@@ -14,36 +16,71 @@
 #include "scenario_paths.hpp"
 #include "static_transit_network.hpp"
 #include "min_transfers_journeys.hpp"
+#include "journey_legs.hpp"
+#include "journeys_geojson.hpp"
 #include "random_nodes.hpp"
 
 /**
- * Find the journeys with the minimum number of transfers between random pairs
- * of stops served by a scenario and time the search. Prints one CSV line per
- * pair, then a summary by minimum number of transfers. Skipped unless these
- * environment variables are set:
+ * Benchmarks of the journeys search with the minimum number of transfers, on
+ * the static network of a scenario. Skipped unless these environment
+ * variables are set:
  * - TR_BENCHMARK_CACHE_PATH: directory of the cache data (*.capnpbin files)
  * - TR_BENCHMARK_SCENARIO_ID: uuid of the scenario
- * - TR_BENCHMARK_PAIRS_COUNT (optional, 100 by default): number of pairs of stops
  */
-TEST(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
+class MinTransfersJourneysBenchmarkTest : public ::testing::Test
 {
-  const char *cachePath = std::getenv("TR_BENCHMARK_CACHE_PATH");
-  const char *scenarioId = std::getenv("TR_BENCHMARK_SCENARIO_ID");
-  const char *pairsCountValue = std::getenv("TR_BENCHMARK_PAIRS_COUNT");
-  if (cachePath == nullptr || scenarioId == nullptr)
+protected:
+  inline static std::unique_ptr<TrRouting::CacheFetcher> cacheFetcher;
+  inline static std::unique_ptr<TrRouting::TransitData> transitData;
+  inline static std::unique_ptr<TrRouting::StaticTransitNetwork> network;
+  inline static std::string scenarioName;
+
+  // Load the scenario's network once for all the tests
+  static void SetUpTestSuite()
   {
-    GTEST_SKIP() << "Set TR_BENCHMARK_CACHE_PATH and TR_BENCHMARK_SCENARIO_ID to find the journeys";
+    const char *cachePath = std::getenv("TR_BENCHMARK_CACHE_PATH");
+    const char *scenarioId = std::getenv("TR_BENCHMARK_SCENARIO_ID");
+    if (cachePath == nullptr || scenarioId == nullptr)
+    {
+      return;
+    }
+    cacheFetcher = std::make_unique<TrRouting::CacheFetcher>(cachePath);
+    transitData = std::make_unique<TrRouting::TransitData>(*cacheFetcher);
+    ASSERT_EQ(TrRouting::DataStatus::READY, transitData->getDataStatus());
+    const TrRouting::Scenario &scenario = transitData->getScenarios().at(boost::uuids::string_generator()(scenarioId));
+    network = std::make_unique<TrRouting::StaticTransitNetwork>(TrRouting::getScenarioPaths(*transitData, scenario));
+    scenarioName = scenario.name;
+    std::cout << "Network of " << network->getPaths().size() << " paths and " << network->getNodes().size() << " stops for scenario " << scenarioName << std::endl;
   }
+
+  static void TearDownTestSuite()
+  {
+    network.reset();
+    transitData.reset();
+    cacheFetcher.reset();
+  }
+
+  void SetUp() override
+  {
+    if (network == nullptr)
+    {
+      GTEST_SKIP() << "Set TR_BENCHMARK_CACHE_PATH and TR_BENCHMARK_SCENARIO_ID to find the journeys";
+    }
+  }
+};
+
+/**
+ * Find the journeys between random pairs of stops served by the scenario.
+ * Prints one CSV line per pair, then a summary by minimum number of transfers.
+ * TR_BENCHMARK_PAIRS_COUNT (optional, 100 by default) is the number of pairs.
+ */
+TEST_F(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
+{
+  const char *pairsCountValue = std::getenv("TR_BENCHMARK_PAIRS_COUNT");
   const size_t pairsCount = pairsCountValue == nullptr ? 100 : std::stoul(pairsCountValue);
 
-  TrRouting::CacheFetcher cacheFetcher(cachePath);
-  TrRouting::TransitData transitData(cacheFetcher);
-  ASSERT_EQ(TrRouting::DataStatus::READY, transitData.getDataStatus());
-  const TrRouting::Scenario &scenario = transitData.getScenarios().at(boost::uuids::string_generator()(scenarioId));
-  TrRouting::StaticTransitNetwork network(TrRouting::getScenarioPaths(transitData, scenario));
-
-  auto origins = TrRouting::sampleRandomNodes(network.getNodes(), pairsCount, 1);
-  auto destinations = TrRouting::sampleRandomNodes(network.getNodes(), pairsCount, 2);
+  auto origins = TrRouting::sampleRandomNodes(network->getNodes(), pairsCount, 1);
+  auto destinations = TrRouting::sampleRandomNodes(network->getNodes(), pairsCount, 2);
   // The samples keep the order of the nodes, shuffle the destinations to pair stops independently of their order
   std::shuffle(destinations.begin(), destinations.end(), std::mt19937(3));
 
@@ -57,7 +94,7 @@ TEST(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
     const TrRouting::Node &origin = origins[i];
     const TrRouting::Node &destination = destinations[i];
     auto startTime = std::chrono::steady_clock::now();
-    auto journeys = TrRouting::getMinTransfersJourneys(network, origin, destination);
+    auto journeys = TrRouting::getMinTransfersJourneys(*network, origin, destination);
     const double durationMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - startTime).count();
 
     const int minTransfers = journeys.empty() ? -1 : journeys.front().size() - 1;
@@ -70,11 +107,52 @@ TEST(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
     statistics.maxDurationMs = std::max(statistics.maxDurationMs, durationMs);
   }
 
-  std::cout << "Network of " << network.getPaths().size() << " paths and " << network.getNodes().size() << " stops for scenario " << scenario.name << std::endl;
   std::cout << "min_transfers,pairs,mean_journeys,max_journeys,mean_duration_ms,max_duration_ms" << std::endl;
   for (const auto &[minTransfers, statistics] : statisticsByMinTransfers)
   {
     std::cout << minTransfers << "," << statistics.pairs << "," << (double) statistics.journeys / statistics.pairs << "," << statistics.maxJourneys << ","
               << statistics.durationMs / statistics.pairs << "," << statistics.maxDurationMs << std::endl;
   }
+}
+
+/**
+ * Write the journeys between two stops as GeoJSON, with at most 100 journeys.
+ * Skipped unless these environment variables are also set:
+ * - TR_BENCHMARK_ORIGIN_ID: uuid of the origin stop
+ * - TR_BENCHMARK_DESTINATION_ID: uuid of the destination stop
+ * - TR_BENCHMARK_GEOJSON_OUTPUT: path of the .geojson file to write
+ */
+TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJsonBetweenTwoStops)
+{
+  const size_t maxJourneys = 100;
+  const char *originId = std::getenv("TR_BENCHMARK_ORIGIN_ID");
+  const char *destinationId = std::getenv("TR_BENCHMARK_DESTINATION_ID");
+  const char *outputPath = std::getenv("TR_BENCHMARK_GEOJSON_OUTPUT");
+  if (originId == nullptr || destinationId == nullptr || outputPath == nullptr)
+  {
+    GTEST_SKIP() << "Set TR_BENCHMARK_ORIGIN_ID, TR_BENCHMARK_DESTINATION_ID and TR_BENCHMARK_GEOJSON_OUTPUT to write the journeys";
+  }
+  const TrRouting::Node &origin = transitData->getNodes().at(boost::uuids::string_generator()(originId));
+  const TrRouting::Node &destination = transitData->getNodes().at(boost::uuids::string_generator()(destinationId));
+
+  auto startTime = std::chrono::steady_clock::now();
+  std::vector<std::vector<TrRouting::JourneyLeg>> journeysLegs;
+  for (const auto &journey : TrRouting::getMinTransfersJourneys(*network, origin, destination, maxJourneys))
+  {
+    journeysLegs.push_back(TrRouting::getFewestSegmentsLegs(*network, journey, origin, destination));
+  }
+  const double durationMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - startTime).count();
+
+  std::ofstream output(outputPath);
+  ASSERT_TRUE(output.is_open()) << "Cannot open " << outputPath;
+  output << TrRouting::getJourneysGeoJson(journeysLegs).dump();
+  output.close();
+  ASSERT_FALSE(output.fail()) << "Cannot write " << outputPath;
+
+  std::cout << "Wrote " << journeysLegs.size() << " journeys from " << origin.name << " (" << origin.code << ") to " << destination.name << " (" << destination.code << ")";
+  if (!journeysLegs.empty())
+  {
+    std::cout << " with " << journeysLegs.front().size() - 1 << " transfers";
+  }
+  std::cout << " to " << outputPath << " in " << durationMs << " ms" << std::endl;
 }

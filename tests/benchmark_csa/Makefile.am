@@ -20,6 +20,8 @@ gtest_SOURCES = gtest.cpp \
     ../../src/scenario_paths.cpp \
     ../../src/static_transit_network.cpp \
     ../../src/min_transfers_journeys.cpp \
+    ../../src/journey_legs.cpp \
+    ../../src/journeys_geojson.cpp \
     ../../src/osm_network_writer.cpp \
     ../../src/geofilter.cpp \
     ../../src/euclideangeofilter.cpp

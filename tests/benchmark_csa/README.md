@@ -27,5 +27,16 @@ The `MinTransfersJourneysBenchmarkTest` finds all the journeys (distinct sequenc
 TR_BENCHMARK_CACHE_PATH=/path/to/cache/directory \
 TR_BENCHMARK_SCENARIO_ID=<scenario uuid> \
 TR_BENCHMARK_PAIRS_COUNT=100 \
-./gtest --gtest_filter='MinTransfersJourneysBenchmarkTest.*'
+./gtest --gtest_filter='MinTransfersJourneysBenchmarkTest.JourneysBetweenRandomStops'
+```
+
+The `JourneysGeoJsonBetweenTwoStops` test writes the journeys between two stops, at most 100, as a GeoJSON file. Each journey is a feature with the number of transfers and the lines of its legs. Each leg is boarded and left where it travels the fewest segments between stops:
+
+```
+TR_BENCHMARK_CACHE_PATH=/path/to/cache/directory \
+TR_BENCHMARK_SCENARIO_ID=<scenario uuid> \
+TR_BENCHMARK_ORIGIN_ID=<origin stop uuid> \
+TR_BENCHMARK_DESTINATION_ID=<destination stop uuid> \
+TR_BENCHMARK_GEOJSON_OUTPUT=/path/to/journeys.geojson \
+./gtest --gtest_filter='MinTransfersJourneysBenchmarkTest.JourneysGeoJsonBetweenTwoStops'
 ```
