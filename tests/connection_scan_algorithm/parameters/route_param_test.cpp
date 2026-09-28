@@ -178,3 +178,30 @@ TEST_F(RouteParametersFixtureTests, SetAllParameters)
     EXPECT_EQ(queryParams.getMaxTransferWalkingTravelTimeSeconds(), maxTransfer);
     EXPECT_EQ(queryParams.getMaxInnerTimeOfTripBufferSeconds(), maxFirst);
 }
+
+// Forward calculation, max total travel time, fastest travel time, fastest waiting before departure, expected max travel time
+class AlternativesMaxTravelTimeTestSuite : public RouteParametersFixtureTests,
+                                           public testing::WithParamInterface<std::tuple<bool, int, int, int, int>> {
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    AlternativesMaxTravelTime, AlternativesMaxTravelTimeTestSuite,
+    testing::Values(
+        std::make_tuple(true, TrRouting::MAX_INT, 2400, 0, 4200),  // ratio of 1.75
+        std::make_tuple(true, TrRouting::MAX_INT, 2400, 300, 4500),  // waiting before departure added
+        std::make_tuple(false, TrRouting::MAX_INT, 2400, 300, 4200),  // waiting ignored in backward calculation
+        std::make_tuple(true, TrRouting::MAX_INT, 600, 0, 1800),  // minimum of 30 minutes
+        std::make_tuple(true, TrRouting::MAX_INT, 6000, 0, 9600),  // at most 60 minutes more than the fastest
+        std::make_tuple(true, 3600, 2400, 0, 3600),  // max total travel time
+        std::make_tuple(true, 1200, 600, 0, 1200)  // max total travel time below the minimum
+    )
+);
+
+TEST_P(AlternativesMaxTravelTimeTestSuite, TestAlternativesMaxTravelTime)
+{
+    const auto [forward, maxTotalTime, fastestTravelTime, waitingTime, expectedMaxTravelTime] = GetParam();
+    const int timeOfTrip = 10800;
+    TrRouting::RouteParameters queryParams(std::make_unique<TrRouting::Point>(45.5544, -73.5), std::make_unique<TrRouting::Point>(45.5524, -73.5779),
+        scenarios.begin()->second, timeOfTrip, 180, maxTotalTime, 1200, 1200, 1200, 1800, true, forward);
+    EXPECT_EQ(expectedMaxTravelTime, queryParams.getAlternativesMaxTravelTimeSeconds(fastestTravelTime, timeOfTrip + waitingTime));
+}

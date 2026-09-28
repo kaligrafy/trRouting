@@ -117,17 +117,7 @@ namespace TrRouting
 
     LineVisitor visitor = LineVisitor();
 
-    // TODO Extract the max travel time calculation to a function
-    maxTravelTime = parameters.getAlternativesMaxTravelTimeRatio() * routingResult.totalTravelTime + (parameters.isForwardCalculation() ? routingResult.departureTime - parameters.getTimeOfTrip() : 0);
-    if (maxTravelTime < parameters.getMinAlternativeMaxTravelTimeSeconds())
-    {
-      maxTravelTime = parameters.getMinAlternativeMaxTravelTimeSeconds();
-    }
-    else if (maxTravelTime > routingResult.totalTravelTime + parameters.getAlternativesMaxAddedTravelTimeSeconds())
-    {
-      maxTravelTime = routingResult.totalTravelTime + parameters.getAlternativesMaxAddedTravelTimeSeconds();
-    }
-    maxTravelTime = std::min(maxTravelTime, parameters.getMaxTotalTravelTimeSeconds());
+    maxTravelTime = parameters.getAlternativesMaxTravelTimeSeconds(routingResult.totalTravelTime, routingResult.departureTime);
     // TODO: We should not create a whole new object just to update maxTravelTime. This parameter should be in the calculation specific parameters, which do not exist yet
     Point* origin = parameters.getOrigin();
     Point* dest = parameters.getDestination();

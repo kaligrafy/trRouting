@@ -202,6 +202,19 @@ namespace TrRouting
       int getMaxValidAlternatives() const { return 50; } // max number of valid alternatives to return
 
       /**
+       * @brief Maximum travel time of the alternatives, from the fastest
+       * journey: its travel time multiplied by the alternatives ratio, plus its
+       * waiting before departure in a forward calculation, bounded by the
+       * minimum alternatives max travel time, the maximum added travel time and
+       * the maximum total travel time.
+       *
+       * @param fastestTravelTime Total travel time of the fastest journey, in seconds
+       * @param fastestDepartureTime Departure time of the fastest journey, in seconds since midnight
+       * @return int The maximum travel time of the alternatives, in seconds
+       */
+      int getAlternativesMaxTravelTimeSeconds(int fastestTravelTime, int fastestDepartureTime) const;
+
+      /**
        * Factory function to create a routeParameters object from  a map of
        * parameters coming from the origin/destination route. It returns a new
        * immutable routeParameters object with complete parameter

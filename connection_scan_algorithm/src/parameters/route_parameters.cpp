@@ -55,6 +55,20 @@ namespace TrRouting
   {
   }
 
+  int RouteParameters::getAlternativesMaxTravelTimeSeconds(int fastestTravelTime, int fastestDepartureTime) const
+  {
+    int maxTravelTime = getAlternativesMaxTravelTimeRatio() * fastestTravelTime + (isForwardCalculation() ? fastestDepartureTime - getTimeOfTrip() : 0);
+    if (maxTravelTime < getMinAlternativeMaxTravelTimeSeconds())
+    {
+      maxTravelTime = getMinAlternativeMaxTravelTimeSeconds();
+    }
+    else if (maxTravelTime > fastestTravelTime + getAlternativesMaxAddedTravelTimeSeconds())
+    {
+      maxTravelTime = fastestTravelTime + getAlternativesMaxAddedTravelTimeSeconds();
+    }
+    return std::min(maxTravelTime, getMaxTotalTravelTimeSeconds());
+  }
+
   RouteParameters RouteParameters::createRouteODParameter(const std::vector<std::pair<std::string, std::string>> &parameters, const std::map<boost::uuids::uuid, Scenario> &scenarios)
   {
 
