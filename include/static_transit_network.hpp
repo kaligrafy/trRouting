@@ -43,10 +43,26 @@ namespace TrRouting
      */
     const std::map<Node::uid_t, std::set<Node::uid_t>> &getTransfers() const { return transfers; }
 
+    /**
+     * @param uid The uid of a stop of the network
+     * @return std::vector<Node::uid_t> The stop and the stops reachable from it
+     * by a walking transfer, ie where a path can be boarded after leaving
+     * another one at this stop
+     */
+    std::vector<Node::uid_t> getStopAndTransferStops(Node::uid_t uid) const;
+
+    /**
+     * @return The positions of each stop in the paths, as (index of the path in
+     * getPaths(), index of the stop in the path's nodesRef). A stop served
+     * twice by a path has two positions in this path.
+     */
+    const std::map<Node::uid_t, std::vector<std::pair<size_t, size_t>>> &getPathPositions() const { return pathPositions; }
+
   private:
     std::vector<std::reference_wrapper<const Path>> paths;
     std::map<Node::uid_t, std::reference_wrapper<const Node>> nodes;
     std::map<Node::uid_t, std::set<Node::uid_t>> transfers;
+    std::map<Node::uid_t, std::vector<std::pair<size_t, size_t>>> pathPositions;
   };
 
 }

@@ -6,11 +6,14 @@ namespace TrRouting
 
   StaticTransitNetwork::StaticTransitNetwork(const std::vector<std::reference_wrapper<const Path>> &_paths) : paths(_paths)
   {
-    for (const Path &path : paths)
+    for (size_t pathIndex = 0; pathIndex < paths.size(); pathIndex++)
     {
-      for (const Node &node : path.nodesRef)
+      const std::vector<std::reference_wrapper<const Node>> &pathNodes = paths[pathIndex].get().nodesRef;
+      for (size_t nodeIndex = 0; nodeIndex < pathNodes.size(); nodeIndex++)
       {
+        const Node &node = pathNodes[nodeIndex];
         nodes.emplace(node.uid, node);
+        pathPositions[node.uid].emplace_back(pathIndex, nodeIndex);
       }
     }
 
@@ -27,6 +30,17 @@ namespace TrRouting
         }
       }
     }
+  }
+
+  std::vector<Node::uid_t> StaticTransitNetwork::getStopAndTransferStops(Node::uid_t uid) const
+  {
+    std::vector<Node::uid_t> uids = {uid};
+    auto stopTransfers = transfers.find(uid);
+    if (stopTransfers != transfers.end())
+    {
+      uids.insert(uids.end(), stopTransfers->second.begin(), stopTransfers->second.end());
+    }
+    return uids;
   }
 
 }

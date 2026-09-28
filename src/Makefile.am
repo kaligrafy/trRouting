@@ -21,6 +21,7 @@ connection_cache.cpp \
 transit_data.cpp \
 scenario_paths.cpp \
 static_transit_network.cpp \
+min_transfers_journeys.cpp \
 osm_network_writer.cpp
 
 # Conditionally add memcached-related files if libmemcached is available
