@@ -2,6 +2,7 @@ check_PROGRAMS = gtest
 
 gtest_SOURCES = gtest.cpp \
     benchmark_CSA_test.cpp \
+    osm_network_benchmark_test.cpp \
     ../../src/cache_fetcher.cpp \
     ../../src/agencies_cache_fetcher.cpp \
     ../../src/nodes_cache_fetcher.cpp \
@@ -15,6 +16,8 @@ gtest_SOURCES = gtest.cpp \
     ../../src/connection_set.cpp \
     ../../src/connection_cache.cpp \
     ../../src/transit_data.cpp \
+    ../../src/scenario_paths.cpp \
+    ../../src/osm_network_writer.cpp \
     ../../src/geofilter.cpp \
     ../../src/euclideangeofilter.cpp
 
