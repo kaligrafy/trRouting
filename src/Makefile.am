@@ -21,6 +21,7 @@ connection_cache.cpp \
 transit_data.cpp \
 scenario_paths.cpp \
 static_transit_network.cpp \
+min_boardings.cpp \
 min_transfers_journeys.cpp \
 journey_legs.cpp \
 journeys_geojson.cpp \

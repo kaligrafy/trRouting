@@ -1,10 +1,9 @@
 #include <algorithm>
 #include <map>
-#include <set>
-#include <unordered_map>
 #include <unordered_set>
 
 #include "min_transfers_journeys.hpp"
+#include "min_boardings.hpp"
 #include "static_transit_network.hpp"
 #include "path.hpp"
 
@@ -13,65 +12,7 @@ namespace TrRouting
 
   namespace
   {
-    // Number of boardings needed to reach a destination when boarding at a stop, by stop uid
-    using BoardingsByNode = std::unordered_map<Node::uid_t, int>;
     using NodesUids = std::unordered_set<Node::uid_t>;
-
-    /**
-     * Rounds from the destinations back to the origins: round r finds the stops
-     * where boarding reaches a destination with r boardings, by boarding a
-     * path before a stop where round r - 1 can be boarded (or before a
-     * destination for round 1). Rounds after the first one reaching an origin
-     * are not needed.
-     */
-    BoardingsByNode getBoardingsToDestinations(const StaticTransitNetwork &network, const NodesUids &originUids, const NodesUids &destinationUids)
-    {
-      BoardingsByNode boardingsByNode;
-      std::set<Node::uid_t> visitedAlightingStops(destinationUids.begin(), destinationUids.end());
-      std::vector<Node::uid_t> alightingStops(visitedAlightingStops.begin(), visitedAlightingStops.end());
-      const auto isOriginReached = [&]() { return std::any_of(originUids.begin(), originUids.end(), [&](Node::uid_t uid) { return boardingsByNode.count(uid) > 0; }); };
-      for (int round = 1; !alightingStops.empty() && !isOriginReached(); round++)
-      {
-        // Only the latest alighting position of each path matters, the stops before it include those of earlier positions
-        std::map<size_t, size_t> latestAlightingPositions;
-        for (const Node::uid_t alightingUid : alightingStops)
-        {
-          for (const auto &[pathIndex, position] : network.getPathPositions().at(alightingUid))
-          {
-            auto [latest, inserted] = latestAlightingPositions.emplace(pathIndex, position);
-            latest->second = std::max(latest->second, position);
-          }
-        }
-
-        std::vector<Node::uid_t> boardingStops;
-        for (const auto &[pathIndex, alightingPosition] : latestAlightingPositions)
-        {
-          const Path &path = network.getPaths()[pathIndex];
-          for (size_t position = 0; position < alightingPosition; position++)
-          {
-            const Node::uid_t uid = path.nodesRef[position].get().uid;
-            if (boardingsByNode.emplace(uid, round).second)
-            {
-              boardingStops.push_back(uid);
-            }
-          }
-        }
-
-        // The next round's paths can be left at the new boarding stops or at the stops with a walking transfer to them
-        alightingStops.clear();
-        for (const Node::uid_t boardingUid : boardingStops)
-        {
-          for (const Node::uid_t uid : network.getStopAndTransferStops(boardingUid))
-          {
-            if (visitedAlightingStops.insert(uid).second)
-            {
-              alightingStops.push_back(uid);
-            }
-          }
-        }
-      }
-      return boardingsByNode;
-    }
 
     using PathsJourney = std::vector<std::reference_wrapper<const Path>>;
     // Earliest boarding index of the next paths, by index of the path in the network
@@ -173,7 +114,11 @@ namespace TrRouting
     };
     const NodesUids originUids = getNetworkUids(origins);
     const NodesUids destinationUids = getNetworkUids(destinations);
-    const BoardingsByNode boardingsByNode = getBoardingsToDestinations(network, originUids, destinationUids);
+    // Rounds after the first one reaching an origin are not needed
+    const auto isOriginNotReached = [&originUids](int, const BoardingsByNode &boardingsByNode) {
+      return std::none_of(originUids.begin(), originUids.end(), [&](Node::uid_t uid) { return boardingsByNode.count(uid) > 0; });
+    };
+    const BoardingsByNode boardingsByNode = getMinBoardings(network, destinationUids, isOriginNotReached);
 
     // Only the origins with the minimum number of boardings start journeys
     std::map<int, std::vector<Node::uid_t>> originsByBoardings;

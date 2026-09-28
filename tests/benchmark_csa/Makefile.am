@@ -19,6 +19,7 @@ gtest_SOURCES = gtest.cpp \
     ../../src/transit_data.cpp \
     ../../src/scenario_paths.cpp \
     ../../src/static_transit_network.cpp \
+    ../../src/min_boardings.cpp \
     ../../src/min_transfers_journeys.cpp \
     ../../src/journey_legs.cpp \
     ../../src/journeys_geojson.cpp \
