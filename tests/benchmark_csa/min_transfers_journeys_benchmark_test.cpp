@@ -158,15 +158,14 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
 }
 
 /**
- * Write the journeys between an origin and a destination as GeoJSON, with at
- * most 100 journeys. Skipped unless these environment variables are also set:
+ * Write all the journeys between an origin and a destination as GeoJSON.
+ * Skipped unless these environment variables are also set:
  * - TR_BENCHMARK_ORIGIN_ID (uuid of the origin stop) or TR_BENCHMARK_ORIGIN_LAT_LON ("latitude,longitude" of the origin place)
  * - TR_BENCHMARK_DESTINATION_ID or TR_BENCHMARK_DESTINATION_LAT_LON, the same for the destination
  * - TR_BENCHMARK_GEOJSON_OUTPUT: path of the .geojson file to write
  */
 TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJson)
 {
-  const size_t maxJourneys = 100;
   const JourneysEnd origin = getJourneysEnd("ORIGIN");
   const JourneysEnd destination = getJourneysEnd("DESTINATION");
   const auto &origins = origin.stops;
@@ -179,7 +178,7 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJson)
 
   auto startTime = std::chrono::steady_clock::now();
   std::vector<std::vector<TrRouting::JourneyLeg>> journeysLegs;
-  for (const auto &journey : TrRouting::getMinTransfersJourneys(*network, origins, destinations, maxJourneys))
+  for (const auto &journey : TrRouting::getMinTransfersJourneys(*network, origins, destinations))
   {
     journeysLegs.push_back(TrRouting::getFewestSegmentsLegs(*network, journey, origins, destinations));
   }

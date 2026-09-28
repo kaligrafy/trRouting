@@ -30,7 +30,7 @@ TR_BENCHMARK_PAIRS_COUNT=100 \
 ./gtest --gtest_filter='MinTransfersJourneysBenchmarkTest.JourneysBetweenRandomStops'
 ```
 
-The `JourneysGeoJson` test writes the journeys between an origin and a destination, at most 100, as a GeoJSON file. The first two features are the origin and destination points, then each journey is a feature with the number of transfers and the lines of its legs. Each leg is boarded and left where it travels the fewest segments between stops. The origin and destination are either stops, given by their uuid (`TR_BENCHMARK_ORIGIN_ID` and `TR_BENCHMARK_DESTINATION_ID`), or places, given as `latitude,longitude` (`TR_BENCHMARK_ORIGIN_LAT_LON` and `TR_BENCHMARK_DESTINATION_LAT_LON`). For a place, the journeys can start or end at any stop within 20 minutes of walking, at 5 km/h as the crow flies; the walking time does not count:
+The `JourneysGeoJson` test writes all the journeys between an origin and a destination as a GeoJSON file. The first two features are the origin and destination points, then each journey is a feature with the number of transfers and the lines of its legs. Each leg is boarded and left where it travels the fewest segments between stops. The origin and destination are either stops, given by their uuid (`TR_BENCHMARK_ORIGIN_ID` and `TR_BENCHMARK_DESTINATION_ID`), or places, given as `latitude,longitude` (`TR_BENCHMARK_ORIGIN_LAT_LON` and `TR_BENCHMARK_DESTINATION_LAT_LON`). For a place, the journeys can start or end at any stop within 20 minutes of walking, at 5 km/h as the crow flies; the walking time does not count:
 
 ```
 TR_BENCHMARK_CACHE_PATH=/path/to/cache/directory \
