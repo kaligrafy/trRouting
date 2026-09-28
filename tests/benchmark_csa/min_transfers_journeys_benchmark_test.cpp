@@ -19,6 +19,9 @@
 #include "journey_legs.hpp"
 #include "journeys_geojson.hpp"
 #include "random_nodes.hpp"
+#include "euclideangeofilter.hpp"
+#include "parameters.hpp"
+#include "point.hpp"
 
 /**
  * Benchmarks of the journeys search with the minimum number of transfers, on
@@ -58,6 +61,37 @@ protected:
     network.reset();
     transitData.reset();
     cacheFetcher.reset();
+  }
+
+  /**
+   * Stops of an end of the journeys, given by the TR_BENCHMARK_<end>_ID
+   * environment variable as a stop uuid, or by TR_BENCHMARK_<end>_LAT_LON as
+   * "latitude,longitude" for the stops within walking distance of this place.
+   * Empty if none is set.
+   */
+  static std::vector<std::reference_wrapper<const TrRouting::Node>> getEndStops(const std::string &end)
+  {
+    const char *id = std::getenv(("TR_BENCHMARK_" + end + "_ID").c_str());
+    const char *latLon = std::getenv(("TR_BENCHMARK_" + end + "_LAT_LON").c_str());
+    if (id != nullptr)
+    {
+      return {transitData->getNodes().at(boost::uuids::string_generator()(id))};
+    }
+    if (latLon == nullptr)
+    {
+      return {};
+    }
+    const std::string latLonValue(latLon);
+    const size_t comma = latLonValue.find(',');
+    const TrRouting::Point place(std::stod(latLonValue.substr(0, comma)), std::stod(latLonValue.substr(comma + 1)));
+    // Same maximum walking time and speed as the default calculation parameters. Only the stops are kept, not the walking time
+    const float walkingSpeedMetersPerSecond = 5 / 3.6;
+    std::vector<std::reference_wrapper<const TrRouting::Node>> stops;
+    for (const TrRouting::NodeTimeDistance &footpath : TrRouting::EuclideanGeoFilter().getAccessibleNodesFootpathsFromPoint(place, transitData->getNodes(), TrRouting::DEFAULT_MAX_ACCESS_TRAVEL_TIME, walkingSpeedMetersPerSecond))
+    {
+      stops.push_back(footpath.node);
+    }
+    return stops;
   }
 
   void SetUp() override
@@ -116,30 +150,28 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysBetweenRandomStops)
 }
 
 /**
- * Write the journeys between two stops as GeoJSON, with at most 100 journeys.
- * Skipped unless these environment variables are also set:
- * - TR_BENCHMARK_ORIGIN_ID: uuid of the origin stop
- * - TR_BENCHMARK_DESTINATION_ID: uuid of the destination stop
+ * Write the journeys between an origin and a destination as GeoJSON, with at
+ * most 100 journeys. Skipped unless these environment variables are also set:
+ * - TR_BENCHMARK_ORIGIN_ID (uuid of the origin stop) or TR_BENCHMARK_ORIGIN_LAT_LON ("latitude,longitude" of the origin place)
+ * - TR_BENCHMARK_DESTINATION_ID or TR_BENCHMARK_DESTINATION_LAT_LON, the same for the destination
  * - TR_BENCHMARK_GEOJSON_OUTPUT: path of the .geojson file to write
  */
-TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJsonBetweenTwoStops)
+TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJson)
 {
   const size_t maxJourneys = 100;
-  const char *originId = std::getenv("TR_BENCHMARK_ORIGIN_ID");
-  const char *destinationId = std::getenv("TR_BENCHMARK_DESTINATION_ID");
+  const auto origins = getEndStops("ORIGIN");
+  const auto destinations = getEndStops("DESTINATION");
   const char *outputPath = std::getenv("TR_BENCHMARK_GEOJSON_OUTPUT");
-  if (originId == nullptr || destinationId == nullptr || outputPath == nullptr)
+  if (origins.empty() || destinations.empty() || outputPath == nullptr)
   {
-    GTEST_SKIP() << "Set TR_BENCHMARK_ORIGIN_ID, TR_BENCHMARK_DESTINATION_ID and TR_BENCHMARK_GEOJSON_OUTPUT to write the journeys";
+    GTEST_SKIP() << "Set the origin, destination and TR_BENCHMARK_GEOJSON_OUTPUT to write the journeys";
   }
-  const TrRouting::Node &origin = transitData->getNodes().at(boost::uuids::string_generator()(originId));
-  const TrRouting::Node &destination = transitData->getNodes().at(boost::uuids::string_generator()(destinationId));
 
   auto startTime = std::chrono::steady_clock::now();
   std::vector<std::vector<TrRouting::JourneyLeg>> journeysLegs;
-  for (const auto &journey : TrRouting::getMinTransfersJourneys(*network, {origin}, {destination}, maxJourneys))
+  for (const auto &journey : TrRouting::getMinTransfersJourneys(*network, origins, destinations, maxJourneys))
   {
-    journeysLegs.push_back(TrRouting::getFewestSegmentsLegs(*network, journey, {origin}, {destination}));
+    journeysLegs.push_back(TrRouting::getFewestSegmentsLegs(*network, journey, origins, destinations));
   }
   const double durationMs = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - startTime).count();
 
@@ -149,7 +181,7 @@ TEST_F(MinTransfersJourneysBenchmarkTest, JourneysGeoJsonBetweenTwoStops)
   output.close();
   ASSERT_FALSE(output.fail()) << "Cannot write " << outputPath;
 
-  std::cout << "Wrote " << journeysLegs.size() << " journeys from " << origin.name << " (" << origin.code << ") to " << destination.name << " (" << destination.code << ")";
+  std::cout << "Wrote " << journeysLegs.size() << " journeys from " << origins.size() << " origin stops to " << destinations.size() << " destination stops";
   if (!journeysLegs.empty())
   {
     std::cout << " with " << journeysLegs.front().size() - 1 << " transfers";
