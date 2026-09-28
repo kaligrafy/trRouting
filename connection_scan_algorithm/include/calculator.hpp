@@ -43,6 +43,7 @@ namespace TrRouting
   class Point;
   class GeoFilter;
   class AlternativeFilter;
+  class StaticTransitNetwork;
 
   class Calculator {
 
@@ -75,6 +76,27 @@ namespace TrRouting
     std::unique_ptr<AllNodesResult> reverseJourneyStepAllNodes(const AccessibilityParameters &parameters, const std::unordered_map<Node::uid_t, JourneyStep> & reverseAccessJourneysSteps);
 
     AlternativesResult alternativesRouting(const RouteParameters &parameters);
+
+    /**
+     * @brief Find the journeys of all the sequences of paths arriving at the
+     * destination within the maximum travel time of the alternatives, computed
+     * from the fastest journey as in alternativesRouting, with up to
+     * `extraTransfers` transfers more than the minimum. A path is used at most
+     * once per sequence, and sequences with a superfluous path, cut by
+     * optimizeJourney, are left to their shorter sequence.
+     *
+     * @param parameters The route parameters, with a departure time
+     * @param network The static network of the scenario's paths
+     * @param extraTransfers Number of transfers more than the minimum
+     * @param maxJourneys Maximum number of sequences of paths to enumerate,
+     * the ones with the most transfers are dropped first
+     * @return AlternativesResult The journey of each sequence of paths, with
+     * its earliest arrival and then its latest departure, by increasing number
+     * of transfers
+     * @throws NoRoutingFoundException If there is no journey
+     * @throws std::invalid_argument If the parameters have an arrival time
+     */
+    AlternativesResult boundedAlternatives(const RouteParameters &parameters, const StaticTransitNetwork &network, size_t extraTransfers = 2, size_t maxJourneys = 10000);
 
     std::vector<int>        optimizeJourney(std::deque<JourneyStep> &journey);
 

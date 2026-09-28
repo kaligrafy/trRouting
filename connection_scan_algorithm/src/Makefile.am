@@ -4,11 +4,14 @@ noinst_LTLIBRARIES = libcsa.la
 
 libcsa_la_SOURCES = alternative_filter.cpp \
 	           alternatives_routing.cpp \
+		   bounded_alternatives.cpp \
+		   bounded_journeys_enumerator.cpp \
 		   calculator.cpp \
 		   forward_calculation.cpp \
 		   forward_journey.cpp \
 		   initializations.cpp \
 		   journey_result.cpp \
+		   latest_departure_journey.cpp \
 		   optimize_journey.cpp \
 		   parameters/common_parameters.cpp \
 		   parameters/route_parameters.cpp \
