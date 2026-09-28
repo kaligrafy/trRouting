@@ -33,27 +33,28 @@ namespace TrRouting
     {
       nlohmann::json lines = nlohmann::json::array();
       nlohmann::json lineStrings = nlohmann::json::array();
-      for (size_t legIndex = 0; legIndex < legs.size(); legIndex++)
-      {
-        const JourneyLeg &leg = legs[legIndex];
-        const Path &path = leg.path;
-        if (legIndex > 0)
+      // Walking from the origin, between legs and to the destination, only where the positions differ
+      const auto addWalking = [&lineStrings](const nlohmann::json &from, const nlohmann::json &to) {
+        if (from != to)
         {
-          const Node &previousAlightingNode = legs[legIndex - 1].path.get().nodesRef[legs[legIndex - 1].alightingIndex];
-          const Node &boardingNode = path.nodesRef[leg.boardingIndex];
-          if (previousAlightingNode.uid != boardingNode.uid)
-          {
-            lineStrings.push_back({getPosition(previousAlightingNode), getPosition(boardingNode)});
-          }
+          lineStrings.push_back({from, to});
         }
+      };
+      nlohmann::json previousPosition = getPosition(origin);
+      for (const JourneyLeg &leg : legs)
+      {
+        const Path &path = leg.path;
         nlohmann::json positions = nlohmann::json::array();
         for (size_t index = leg.boardingIndex; index <= leg.alightingIndex; index++)
         {
           positions.push_back(getPosition(path.nodesRef[index]));
         }
+        addWalking(previousPosition, positions.front());
         lineStrings.push_back(positions);
+        previousPosition = positions.back();
         lines.push_back(path.line.shortname);
       }
+      addWalking(previousPosition, getPosition(destination));
 
       features.push_back({
         {"type", "Feature"},

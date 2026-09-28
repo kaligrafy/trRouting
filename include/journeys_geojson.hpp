@@ -16,7 +16,8 @@ namespace TrRouting
    * Features are the origin and destination Points, with "origin" and
    * "destination" as name property. Then each journey is a Feature whose
    * geometry is a MultiLineString with, in travel order, the stops traveled on
-   * each leg and the walking transfers between legs, if any. The properties
+   * each leg and the walking, as straight lines, from the origin, between legs
+   * and to the destination, where the positions differ. The properties
    * are the number of transfers and the short names of the lines of the legs.
    *
    * @param journeys The journeys, as their legs, for example from getFewestSegmentsLegs

@@ -24,7 +24,8 @@ TEST_F(JourneysGeoJsonTest, FeaturePerJourneyWithLegsAndWalkingTransfers)
 {
   const TrRouting::Path &pathSN = transitData.getPaths().at(TestDataFetcher::pathSNUuid);
   const TrRouting::Path &pathEW = transitData.getPaths().at(TestDataFetcher::pathEWUuid);
-  // South2 to North1 on South/North, then South2 to MidNode on South/North, walk to West1 and West1 to West2 on East/West
+  // From the origin, near South2, to West2: walk to South2 then South2 to North1 on South/North and walk to West2,
+  // or walk to South2, South2 to MidNode on South/North, walk to West1 and West1 to West2 on East/West
   std::vector<std::vector<TrRouting::JourneyLeg>> journeys = {
     {{pathSN, 0, 3}},
     {{pathSN, 0, 2}, {pathEW, 3, 4}}
@@ -38,13 +39,16 @@ TEST_F(JourneysGeoJsonTest, FeaturePerJourneyWithLegsAndWalkingTransfers)
       {
         {"type", "Feature"},
         {"geometry", {{"type", "MultiLineString"}, {"coordinates", {
-          {position(TestDataFetcher::nodeSouth2Uuid), position(TestDataFetcher::nodeSouth1Uuid), position(TestDataFetcher::nodeMidNodeUuid), position(TestDataFetcher::nodeNorth1Uuid)}
+          {{-73.589, 45.527}, position(TestDataFetcher::nodeSouth2Uuid)},
+          {position(TestDataFetcher::nodeSouth2Uuid), position(TestDataFetcher::nodeSouth1Uuid), position(TestDataFetcher::nodeMidNodeUuid), position(TestDataFetcher::nodeNorth1Uuid)},
+          {position(TestDataFetcher::nodeNorth1Uuid), position(TestDataFetcher::nodeWest2Uuid)}
         }}}},
         {"properties", {{"transfers", 0}, {"lines", {"01"}}}}
       },
       {
         {"type", "Feature"},
         {"geometry", {{"type", "MultiLineString"}, {"coordinates", {
+          {{-73.589, 45.527}, position(TestDataFetcher::nodeSouth2Uuid)},
           {position(TestDataFetcher::nodeSouth2Uuid), position(TestDataFetcher::nodeSouth1Uuid), position(TestDataFetcher::nodeMidNodeUuid)},
           {position(TestDataFetcher::nodeMidNodeUuid), position(TestDataFetcher::nodeWest1Uuid)},
           {position(TestDataFetcher::nodeWest1Uuid), position(TestDataFetcher::nodeWest2Uuid)}
