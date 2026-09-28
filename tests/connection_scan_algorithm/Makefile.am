@@ -8,6 +8,7 @@ csa_test_SOURCES = gtest.cpp \
     ../../src/connection_set.cpp \
     ../../src/connection_cache.cpp \
     ../../src/transit_data.cpp \
+    ../benchmark_csa/random_nodes.cpp \
     csa_test_base.cpp \
     csa_test_data_fetcher.cpp \
     connection_cache_test.cpp \
@@ -22,7 +23,8 @@ csa_test_SOURCES = gtest.cpp \
     parameters/accessibility_param_test.cpp \
     combinations_test.cpp \
     alternative_filter_test.cpp \
-    line_combinations_test.cpp
+    line_combinations_test.cpp \
+    random_nodes_test.cpp
 
 csa_test_LDADD = $(top_srcdir)/tests/libgtest.la ../../connection_scan_algorithm/src/libcsa.la
 
