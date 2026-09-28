@@ -43,7 +43,7 @@ TEST_F(JourneysGeoJsonTest, FeaturePerJourneyWithLegsAndWalkingTransfers)
           {position(TestDataFetcher::nodeSouth2Uuid), position(TestDataFetcher::nodeSouth1Uuid), position(TestDataFetcher::nodeMidNodeUuid), position(TestDataFetcher::nodeNorth1Uuid)},
           {position(TestDataFetcher::nodeNorth1Uuid), position(TestDataFetcher::nodeWest2Uuid)}
         }}}},
-        {"properties", {{"transfers", 0}, {"lines", {"01"}}}}
+        {"properties", {{"transfers", 0}, {"lines", {"01"}}, {"stroke", "#cf1717"}}}
       },
       {
         {"type", "Feature"},
@@ -53,7 +53,7 @@ TEST_F(JourneysGeoJsonTest, FeaturePerJourneyWithLegsAndWalkingTransfers)
           {position(TestDataFetcher::nodeMidNodeUuid), position(TestDataFetcher::nodeWest1Uuid)},
           {position(TestDataFetcher::nodeWest1Uuid), position(TestDataFetcher::nodeWest2Uuid)}
         }}}},
-        {"properties", {{"transfers", 1}, {"lines", {"01", "02"}}}}
+        {"properties", {{"transfers", 1}, {"lines", {"01", "02"}}, {"stroke", "#17cf4d"}}}
       }
     }}
   };

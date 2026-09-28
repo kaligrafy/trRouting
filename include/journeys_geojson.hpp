@@ -18,7 +18,9 @@ namespace TrRouting
    * geometry is a MultiLineString with, in travel order, the stops traveled on
    * each leg and the walking, as straight lines, from the origin, between legs
    * and to the destination, where the positions differ. The properties
-   * are the number of transfers and the short names of the lines of the legs.
+   * are the number of transfers, the short names of the lines of the legs and
+   * a distinct color per journey, as the simplestyle `stroke` used by map
+   * viewers like geojson.io.
    *
    * @param journeys The journeys, as their legs, for example from getFewestSegmentsLegs
    * @param origin The origin of the journeys, a place or a stop
